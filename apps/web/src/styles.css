@@ -16,7 +16,8 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   border: 1px solid #cbd2df;
   border-radius: 6px;
   font: inherit;
@@ -132,10 +133,89 @@ button {
   text-decoration: none;
 }
 
+.studio-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(360px, 1fr) 380px;
+  min-height: 100vh;
+}
+
+.agent-list,
+.studio-side {
+  background: #ffffff;
+  border-right: 1px solid #dde3ee;
+  padding: 14px;
+}
+
+.studio-side {
+  border-left: 1px solid #dde3ee;
+  border-right: 0;
+  overflow: auto;
+}
+
+.agent-list-item {
+  background: transparent;
+  color: #18202f;
+  display: block;
+  margin-bottom: 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.agent-list-item.active {
+  background: #18202f;
+  color: #ffffff;
+}
+
+.studio-main {
+  padding: 20px;
+}
+
+.studio-header h1 {
+  font-size: 24px;
+  margin: 0 0 18px;
+}
+
+.chat-panel form,
+.panel-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.chat-panel textarea,
+.panel-stack textarea {
+  min-height: 120px;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
+}
+
+.json-editor {
+  background: #101522;
+  color: #dce5f7;
+  font-family: "Cascadia Code", Consolas, monospace;
+  line-height: 1.5;
+}
+
+.output-box {
+  background: #ffffff;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  margin-top: 14px;
+  min-height: 160px;
+  padding: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
 @media (max-width: 720px) {
   .inline-form,
   .metrics,
-  .row {
+  .row,
+  .studio-shell {
     grid-template-columns: 1fr;
   }
 }
