@@ -1,0 +1,141 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f7f8fb;
+  color: #18202f;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select {
+  border: 1px solid #cbd2df;
+  border-radius: 6px;
+  font: inherit;
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+button {
+  background: #18202f;
+  color: white;
+  cursor: pointer;
+}
+
+.workspace {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 32px 20px;
+}
+
+.page-header {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+
+.page-header p,
+.message {
+  color: #596579;
+  margin: 0;
+}
+
+.band {
+  border-top: 1px solid #dde3ee;
+  padding: 20px 0 28px;
+}
+
+.band h2 {
+  font-size: 18px;
+  margin: 0 0 14px;
+}
+
+.inline-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+}
+
+.table-list {
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.row {
+  align-items: center;
+  background: white;
+  border-bottom: 1px solid #dde3ee;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto auto;
+  min-height: 48px;
+  padding: 0 14px;
+  text-decoration: none;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 24px;
+}
+
+.metrics div {
+  background: white;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.metrics span {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.metrics p {
+  color: #596579;
+  margin: 4px 0 0;
+}
+
+.workspace-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workspace-links a {
+  background: white;
+  border: 1px solid #cbd2df;
+  border-radius: 6px;
+  padding: 9px 12px;
+  text-decoration: none;
+}
+
+@media (max-width: 720px) {
+  .inline-form,
+  .metrics,
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
