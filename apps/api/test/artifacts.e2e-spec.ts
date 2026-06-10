@@ -98,7 +98,9 @@ describe('Artifact Export API', () => {
     const artifact = exportResponse.json().data;
     expect(artifact.type).toBe('material_package');
     expect(artifact.objectKey).toContain(run.id);
-    expect(artifact.contentType).toBe('application/json');
+    expect(artifact.objectKey).toContain('package.zip');
+    expect(artifact.filename).toBe('package.zip');
+    expect(artifact.contentType).toBe('application/zip');
 
     const updatedRun = await prisma.workflowRun.findUniqueOrThrow({ where: { id: run.id } });
     expect(updatedRun.status).toBe('exported');
