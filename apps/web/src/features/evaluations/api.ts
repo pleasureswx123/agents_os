@@ -1,6 +1,6 @@
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('agents_os_access_token');
   return token ? { authorization: `Bearer ${token}` } : {};
 }

@@ -1,6 +1,6 @@
 # 智能体工厂 MVP 实施计划
 
-> **给 agentic workers 的要求：** 实施本计划时必须使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans`，并按任务逐项执行。所有步骤使用 checkbox（`- [ ]`）跟踪。
+> **给 agentic workers 的要求：** 实施本计划时必须使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans`，并按任务逐项执行。所有步骤使用 checkbox（`- [x]`）跟踪。
 
 **目标：** 构建智能体工厂平台 MVP，并从第一版开始使用最终架构路线：React Flow、Socket.IO、BullMQ/Redis、MinIO/S3 兼容存储、JWT 鉴权、TemplateVersion、WorkflowSnapshot、PublishedApp 都属于 MVP 基线。
 
@@ -132,7 +132,7 @@
 - 创建：`apps/web/src/app/App.tsx`
 - 创建：`apps/worker/src/main.ts`
 
-- [ ] **步骤 1：初始化 workspace manifest**
+- [x] **步骤 1：初始化 workspace manifest**
 
 根 `package.json` 至少包含：
 
@@ -159,7 +159,7 @@
 }
 ```
 
-- [ ] **步骤 2：创建 Docker Compose 基础设施**
+- [x] **步骤 2：创建 Docker Compose 基础设施**
 
 `docker-compose.yml` 必须包含 PostgreSQL 16、Redis 7、MinIO：
 
@@ -199,7 +199,7 @@ volumes:
   minio_data:
 ```
 
-- [ ] **步骤 3：创建环境变量样例**
+- [x] **步骤 3：创建环境变量样例**
 
 `.env.example` 至少包含：
 
@@ -218,7 +218,7 @@ OPENAI_COMPATIBLE_BASE_URL=https://api.openai.com/v1
 OPENAI_COMPATIBLE_MODEL_ID=gpt-4.1-mini
 ```
 
-- [ ] **步骤 4：验证基础设施**
+- [x] **步骤 4：验证基础设施**
 
 运行：
 
@@ -229,7 +229,7 @@ docker compose ps
 
 期望：`postgres`、`redis`、`minio` 都处于运行状态。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```powershell
 git add package.json pnpm-workspace.yaml turbo.json docker-compose.yml .env.example apps packages
@@ -251,7 +251,7 @@ git commit -m "chore: initialize agents os monorepo"
 - 测试：`packages/shared/src/schemas/agent-config.schema.test.ts`
 - 测试：`packages/shared/src/schemas/workflow.schema.test.ts`
 
-- [ ] **步骤 1：定义状态类型**
+- [x] **步骤 1：定义状态类型**
 
 状态必须与 `docs/architecture/05-data-model.md` 一致：
 
@@ -277,7 +277,7 @@ export type WorkflowNodeRunStatus =
 export type PublishedAppStatus = 'draft' | 'enabled' | 'disabled' | 'archived';
 ```
 
-- [ ] **步骤 2：定义 Agent 配置 schema**
+- [x] **步骤 2：定义 Agent 配置 schema**
 
 使用 Zod 校验：
 
@@ -293,7 +293,7 @@ skills
 
 测试必须覆盖合法 OpenAI-compatible 配置。
 
-- [ ] **步骤 3：定义 WorkflowNode schema**
+- [x] **步骤 3：定义 WorkflowNode schema**
 
 校验字段：
 
@@ -308,7 +308,7 @@ failurePolicy
 enabled
 ```
 
-- [ ] **步骤 4：定义 Socket.IO 事件契约**
+- [x] **步骤 4：定义 Socket.IO 事件契约**
 
 事件名：
 
@@ -337,7 +337,7 @@ export const serverNodeEvents = [
 export const clientRunEvents = ['run.join', 'run.control'] as const;
 ```
 
-- [ ] **步骤 5：运行测试**
+- [x] **步骤 5：运行测试**
 
 ```powershell
 pnpm --filter @agents-os/shared test
@@ -345,7 +345,7 @@ pnpm --filter @agents-os/shared test
 
 期望：schema 测试通过。
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add packages/shared
@@ -363,7 +363,7 @@ git commit -m "feat: add shared contracts and schemas"
 - 创建：`apps/api/src/modules/prisma/prisma.service.ts`
 - 测试：`apps/api/test/prisma-schema.spec.ts`
 
-- [ ] **步骤 1：实现 Prisma schema**
+- [x] **步骤 1：实现 Prisma schema**
 
 必须包含这些模型：
 
@@ -390,7 +390,7 @@ Artifact
 UsageRecord
 ```
 
-- [ ] **步骤 2：实现 seed 数据**
+- [x] **步骤 2：实现 seed 数据**
 
 seed 必须创建：
 
@@ -413,7 +413,7 @@ TemplateVersion v1，包含六个预置 Agent 和默认 Workflow
 素材包整理智能体
 ```
 
-- [ ] **步骤 3：运行迁移**
+- [x] **步骤 3：运行迁移**
 
 ```powershell
 pnpm db:migrate
@@ -421,7 +421,7 @@ pnpm db:migrate
 
 期望：所有表成功创建。
 
-- [ ] **步骤 4：运行 seed**
+- [x] **步骤 4：运行 seed**
 
 ```powershell
 pnpm db:seed
@@ -429,7 +429,7 @@ pnpm db:seed
 
 期望：至少存在一个组织、一个管理员、一个系统模板、一个模板版本。
 
-- [ ] **步骤 5：添加 schema smoke test**
+- [x] **步骤 5：添加 schema smoke test**
 
 测试连接 Prisma，并断言：
 
@@ -439,7 +439,7 @@ ProviderConfig count >= 1
 User count >= 1
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add prisma apps/api/src/modules/prisma apps/api/test/prisma-schema.spec.ts
@@ -462,7 +462,7 @@ git commit -m "feat: add prisma schema and seed data"
 - 创建：`apps/api/src/modules/auth/jwt-access.guard.ts`
 - 测试：`apps/api/test/auth.e2e-spec.ts`
 
-- [ ] **步骤 1：配置 NestJS + Fastify**
+- [x] **步骤 1：配置 NestJS + Fastify**
 
 `main.ts` 必须：
 
@@ -475,7 +475,7 @@ git commit -m "feat: add prisma schema and seed data"
 监听 API_PORT 或 3000
 ```
 
-- [ ] **步骤 2：实现鉴权接口**
+- [x] **步骤 2：实现鉴权接口**
 
 接口：
 
@@ -487,7 +487,7 @@ POST /api/auth/logout
 
 MVP 登录使用 seed 的 admin 用户。
 
-- [ ] **步骤 3：实现 JWT Guard**
+- [x] **步骤 3：实现 JWT Guard**
 
 Guard 必须：
 
@@ -498,7 +498,7 @@ Guard 必须：
 缺失或无效 token 返回 UNAUTHORIZED
 ```
 
-- [ ] **步骤 4：统一响应与错误格式**
+- [x] **步骤 4：统一响应与错误格式**
 
 错误响应必须符合：
 
@@ -513,7 +513,7 @@ Guard 必须：
 }
 ```
 
-- [ ] **步骤 5：测试鉴权**
+- [x] **步骤 5：测试鉴权**
 
 ```powershell
 pnpm --filter @agents-os/api test:e2e -- auth.e2e-spec.ts
@@ -527,7 +527,7 @@ POST /api/auth/login 返回 accessToken 和 refreshToken
 带 token 访问受保护接口返回 200
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/api
@@ -549,7 +549,7 @@ git commit -m "feat: add api foundation and auth"
 - 创建：`apps/web/src/pages/ProjectsPage.tsx`
 - 创建：`apps/web/src/pages/ProjectWorkspacePage.tsx`
 
-- [ ] **步骤 1：实现模板 API**
+- [x] **步骤 1：实现模板 API**
 
 接口：
 
@@ -558,7 +558,7 @@ GET /api/templates
 GET /api/templates/:templateId/versions/:versionId
 ```
 
-- [ ] **步骤 2：实现基于 TemplateVersion 创建 Project**
+- [x] **步骤 2：实现基于 TemplateVersion 创建 Project**
 
 `POST /api/projects` 必须：
 
@@ -572,7 +572,7 @@ GET /api/templates/:templateId/versions/:versionId
 返回 Project 摘要
 ```
 
-- [ ] **步骤 3：实现 Project API**
+- [x] **步骤 3：实现 Project API**
 
 接口：
 
@@ -584,7 +584,7 @@ DELETE /api/projects/:projectId
 POST /api/projects/:projectId/save-as-template
 ```
 
-- [ ] **步骤 4：实现前端项目列表和工作区壳**
+- [x] **步骤 4：实现前端项目列表和工作区壳**
 
 页面：
 
@@ -603,7 +603,7 @@ Recent runs placeholder area
 Links to Agent Studio, Evaluation Lab, Workflow Builder
 ```
 
-- [ ] **步骤 5：测试项目创建**
+- [x] **步骤 5：测试项目创建**
 
 ```powershell
 pnpm --filter @agents-os/api test:e2e -- projects.e2e-spec.ts
@@ -616,7 +616,7 @@ pnpm --filter @agents-os/api test:e2e -- projects.e2e-spec.ts
 项目副本修改不影响系统模板
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/api/src/modules/templates apps/api/src/modules/projects apps/web/src/pages apps/api/test/projects.e2e-spec.ts
@@ -640,7 +640,7 @@ git commit -m "feat: add templates and project creation"
 - 创建：`apps/api/src/modules/providers/openai-compatible.provider.ts`
 - 测试：`apps/api/test/agents.e2e-spec.ts`
 
-- [ ] **步骤 1：实现 Agent CRUD**
+- [x] **步骤 1：实现 Agent CRUD**
 
 接口：
 
@@ -653,11 +653,11 @@ POST /api/agents/:agentId/copy
 DELETE /api/agents/:agentId
 ```
 
-- [ ] **步骤 2：实现 Agent 删除依赖规则**
+- [x] **步骤 2：实现 Agent 删除依赖规则**
 
 如果任意 WorkflowNode 引用了该 Agent 下的 AgentVersion，返回 `AGENT_IN_USE`，并带上依赖详情。
 
-- [ ] **步骤 3：实现 AgentVersion API**
+- [x] **步骤 3：实现 AgentVersion API**
 
 接口：
 
@@ -668,7 +668,7 @@ GET /api/agent-versions/:versionId
 POST /api/agents/:agentId/restore-version
 ```
 
-- [ ] **步骤 4：实现 LLM Provider 抽象**
+- [x] **步骤 4：实现 LLM Provider 抽象**
 
 接口：
 
@@ -678,7 +678,7 @@ chat(request: LlmChatRequest): Promise<LlmChatResponse>
 
 Provider 必须通过 `apiKeyRef` 读取密钥，不允许从 Agent 配置读取明文 key。
 
-- [ ] **步骤 5：实现聊天测试接口**
+- [x] **步骤 5：实现聊天测试接口**
 
 `POST /api/agents/:agentId/chat` 必须：
 
@@ -691,7 +691,7 @@ Provider 必须通过 `apiKeyRef` 读取密钥，不允许从 Agent 配置读取
 返回 output、rawText、parseError、usage
 ```
 
-- [ ] **步骤 6：测试 Agent 行为**
+- [x] **步骤 6：测试 Agent 行为**
 
 测试中使用 mock LLM provider。
 
@@ -709,7 +709,7 @@ JSON 解析失败时保留 rawText 和 parseError
 AgentVersion 快照不可变
 ```
 
-- [ ] **步骤 7：提交**
+- [x] **步骤 7：提交**
 
 ```powershell
 git add apps/api/src/modules/agents apps/api/src/modules/agent-versions apps/api/src/modules/chats apps/api/src/modules/providers apps/api/test/agents.e2e-spec.ts
@@ -730,7 +730,7 @@ git commit -m "feat: add agent studio backend"
 - 创建：`apps/web/src/features/agents/store.ts`
 - 测试：`apps/web/tests/agent-studio.spec.ts`
 
-- [ ] **步骤 1：添加路由**
+- [x] **步骤 1：添加路由**
 
 路由：
 
@@ -738,7 +738,7 @@ git commit -m "feat: add agent studio backend"
 /projects/:projectId/agents/:agentId?
 ```
 
-- [ ] **步骤 2：实现 Agent Studio 布局**
+- [x] **步骤 2：实现 Agent Studio 布局**
 
 布局：
 
@@ -748,7 +748,7 @@ git commit -m "feat: add agent studio backend"
 右侧：配置 / 版本 / 测试用例 Tabs
 ```
 
-- [ ] **步骤 3：接入 Monaco Editor**
+- [x] **步骤 3：接入 Monaco Editor**
 
 用于编辑：
 
@@ -759,7 +759,7 @@ outputSchema
 runtimeParams
 ```
 
-- [ ] **步骤 4：接入聊天接口**
+- [x] **步骤 4：接入聊天接口**
 
 聊天面板必须：
 
@@ -772,7 +772,7 @@ runtimeParams
 提供保存版本入口
 ```
 
-- [ ] **步骤 5：添加 Playwright 测试**
+- [x] **步骤 5：添加 Playwright 测试**
 
 ```powershell
 pnpm --filter @agents-os/web test:e2e -- agent-studio.spec.ts
@@ -788,7 +788,7 @@ pnpm --filter @agents-os/web test:e2e -- agent-studio.spec.ts
 用户可以保存 AgentVersion
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/web/src/pages/AgentStudioPage.tsx apps/web/src/features/agents apps/web/tests/agent-studio.spec.ts
@@ -810,7 +810,7 @@ git commit -m "feat: add agent studio frontend"
 - 测试：`apps/api/test/evaluations.e2e-spec.ts`
 - 测试：`apps/web/tests/evaluation-lab.spec.ts`
 
-- [ ] **步骤 1：实现后端 API**
+- [x] **步骤 1：实现后端 API**
 
 接口：
 
@@ -823,15 +823,15 @@ GET /api/test-cases/:testCaseId/results
 PATCH /api/test-results/:resultId
 ```
 
-- [ ] **步骤 2：通过 AgentVersion 运行测试用例**
+- [x] **步骤 2：通过 AgentVersion 运行测试用例**
 
 运行测试用例必须使用 `AgentVersion.configSnapshot`，不能使用 `Agent.draftConfig`。
 
-- [ ] **步骤 3：实现前端版本对比 UI**
+- [x] **步骤 3：实现前端版本对比 UI**
 
 同一个 TestCase 可以对比多个 AgentVersion 的输出。
 
-- [ ] **步骤 4：测试 Evaluation Lab**
+- [x] **步骤 4：测试 Evaluation Lab**
 
 期望：
 
@@ -843,7 +843,7 @@ PATCH /api/test-results/:resultId
 可以对比两个版本
 ```
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```powershell
 git add apps/api/src/modules/evaluations apps/web/src/pages/EvaluationLabPage.tsx apps/web/src/features/evaluations apps/api/test/evaluations.e2e-spec.ts apps/web/tests/evaluation-lab.spec.ts
@@ -866,7 +866,7 @@ git commit -m "feat: add evaluation lab"
 - 测试：`apps/api/test/workflows.e2e-spec.ts`
 - 测试：`apps/web/tests/workflow-builder.spec.ts`
 
-- [ ] **步骤 1：实现 Workflow API**
+- [x] **步骤 1：实现 Workflow API**
 
 接口：
 
@@ -882,7 +882,7 @@ DELETE /api/workflow-nodes/:nodeId
 POST /api/workflows/:workflowId/snapshots
 ```
 
-- [ ] **步骤 2：实现 WorkflowSnapshot 创建**
+- [x] **步骤 2：实现 WorkflowSnapshot 创建**
 
 快照必须冻结：
 
@@ -897,7 +897,7 @@ failurePolicy
 allowManualEdit
 ```
 
-- [ ] **步骤 3：实现 React Flow 线性模式**
+- [x] **步骤 3：实现 React Flow 线性模式**
 
 MVP 只允许：
 
@@ -910,7 +910,7 @@ MVP 只允许：
 节点配置面板
 ```
 
-- [ ] **步骤 4：校验可发布性**
+- [x] **步骤 4：校验可发布性**
 
 创建快照前，每个启用节点必须具备：
 
@@ -922,7 +922,7 @@ outputKey
 failurePolicy
 ```
 
-- [ ] **步骤 5：测试 Workflow Builder**
+- [x] **步骤 5：测试 Workflow Builder**
 
 期望：
 
@@ -933,7 +933,7 @@ failurePolicy
 用户可以创建不可变 WorkflowSnapshot
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/api/src/modules/workflows apps/web/src/pages/WorkflowBuilderPage.tsx apps/web/src/features/workflows apps/api/test/workflows.e2e-spec.ts apps/web/tests/workflow-builder.spec.ts
@@ -958,7 +958,7 @@ git commit -m "feat: add workflow builder"
 - 测试：`apps/worker/test/workflow-runner.spec.ts`
 - 测试：`apps/web/tests/workflow-run.spec.ts`
 
-- [ ] **步骤 1：实现创建运行 API**
+- [x] **步骤 1：实现创建运行 API**
 
 `POST /api/workflows/:workflowId/runs` 必须：
 
@@ -969,7 +969,7 @@ git commit -m "feat: add workflow builder"
 返回 workflowRunId 和 socketRoom
 ```
 
-- [ ] **步骤 2：实现 Socket.IO Gateway**
+- [x] **步骤 2：实现 Socket.IO Gateway**
 
 事件：
 
@@ -986,7 +986,7 @@ node.failed
 node.succeeded
 ```
 
-- [ ] **步骤 3：实现 Worker Runner**
+- [x] **步骤 3：实现 Worker Runner**
 
 Worker 必须：
 
@@ -1002,7 +1002,7 @@ failurePolicy=stop 时停止
 failurePolicy=skip 时跳过
 ```
 
-- [ ] **步骤 4：实现编辑输出和重跑**
+- [x] **步骤 4：实现编辑输出和重跑**
 
 接口：
 
@@ -1013,7 +1013,7 @@ POST /api/workflow-runs/:runId/resume
 POST /api/workflow-runs/:runId/cancel
 ```
 
-- [ ] **步骤 5：实现 WorkflowRun 前端页面**
+- [x] **步骤 5：实现 WorkflowRun 前端页面**
 
 页面展示：
 
@@ -1029,7 +1029,7 @@ Resume
 Cancel
 ```
 
-- [ ] **步骤 6：测试 Runner**
+- [x] **步骤 6：测试 Runner**
 
 期望：
 
@@ -1042,7 +1042,7 @@ Socket.IO 推送 run 和 node events
 edited output 会被下游节点使用
 ```
 
-- [ ] **步骤 7：提交**
+- [x] **步骤 7：提交**
 
 ```powershell
 git add apps/api/src/modules/workflow-runs apps/api/src/modules/realtime apps/worker apps/web/src/pages/WorkflowRunPage.tsx apps/web/src/features/workflow-runs apps/api/test/workflow-runs.e2e-spec.ts apps/worker/test/workflow-runner.spec.ts apps/web/tests/workflow-run.spec.ts
@@ -1064,7 +1064,7 @@ git commit -m "feat: add workflow runner and realtime events"
 - 创建：`apps/web/src/features/artifacts/components/ExportPackagePanel.tsx`
 - 测试：`apps/api/test/artifacts.e2e-spec.ts`
 
-- [ ] **步骤 1：实现 S3 兼容存储服务**
+- [x] **步骤 1：实现 S3 兼容存储服务**
 
 Storage service 必须支持：
 
@@ -1077,7 +1077,7 @@ objectExists(key)
 
 开发环境通过 S3-compatible client 连接 MinIO。
 
-- [ ] **步骤 2：实现导出包构建器**
+- [x] **步骤 2：实现导出包构建器**
 
 完成的 WorkflowRun 导出：
 
@@ -1096,7 +1096,7 @@ README.md
 package.zip
 ```
 
-- [ ] **步骤 3：保留可追溯信息**
+- [x] **步骤 3：保留可追溯信息**
 
 `manifest.json` 必须包含：
 
@@ -1110,7 +1110,7 @@ generatedAt
 asset paths
 ```
 
-- [ ] **步骤 4：确保不泄露密钥**
+- [x] **步骤 4：确保不泄露密钥**
 
 导出包不得包含：
 
@@ -1121,7 +1121,7 @@ provider base URL if hidden from published app
 system prompt unless explicitly exported by factory-side user
 ```
 
-- [ ] **步骤 5：测试导出**
+- [x] **步骤 5：测试导出**
 
 期望：
 
@@ -1132,7 +1132,7 @@ manifest 包含 run/node/version 可追溯信息
 zip 内容不出现 API key 或 apiKeyRef
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/api/src/modules/storage apps/api/src/modules/artifacts apps/web/src/features/artifacts apps/api/test/artifacts.e2e-spec.ts
@@ -1153,7 +1153,7 @@ git commit -m "feat: add artifact storage and export packages"
 - 测试：`apps/api/test/published-apps.e2e-spec.ts`
 - 测试：`apps/web/tests/published-app.spec.ts`
 
-- [ ] **步骤 1：实现 PublishedApp 管理 API**
+- [x] **步骤 1：实现 PublishedApp 管理 API**
 
 接口：
 
@@ -1163,7 +1163,7 @@ POST /api/projects/:projectId/published-apps
 
 必须要求 `workflowSnapshotId`。
 
-- [ ] **步骤 2：实现公开应用信息 API**
+- [x] **步骤 2：实现公开应用信息 API**
 
 `GET /api/published-apps/:slug` 只返回：
 
@@ -1187,7 +1187,7 @@ WorkflowNode internals
 AgentVersion configSnapshot
 ```
 
-- [ ] **步骤 3：实现公开运行 API**
+- [x] **步骤 3：实现公开运行 API**
 
 `POST /api/published-apps/:slug/runs` 必须：
 
@@ -1199,7 +1199,7 @@ AgentVersion configSnapshot
 返回 publicRunId 和 socketRoom
 ```
 
-- [ ] **步骤 4：实现公开页面**
+- [x] **步骤 4：实现公开页面**
 
 页面包含：
 
@@ -1212,7 +1212,7 @@ Realtime progress
 Download button when exported
 ```
 
-- [ ] **步骤 5：测试 Published App**
+- [x] **步骤 5：测试 Published App**
 
 期望：
 
@@ -1224,7 +1224,7 @@ Download button when exported
 小白用户可以下载导出包
 ```
 
-- [ ] **步骤 6：提交**
+- [x] **步骤 6：提交**
 
 ```powershell
 git add apps/api/src/modules/published-apps apps/web/src/pages/PublishedAppPage.tsx apps/web/src/features/published-apps apps/api/test/published-apps.e2e-spec.ts apps/web/tests/published-app.spec.ts
@@ -1241,7 +1241,7 @@ git commit -m "feat: add published app runtime"
 - 修改：`docs/MVP-IMPLEMENTATION-READINESS.md`
 - 修改：`docs/TECH-智能体工厂平台-React-Nodejs.md`
 
-- [ ] **步骤 1：添加 E2E happy path**
+- [x] **步骤 1：添加 E2E happy path**
 
 Playwright 测试覆盖：
 
@@ -1261,7 +1261,7 @@ Run PublishedApp
 Download package
 ```
 
-- [ ] **步骤 2：添加运行手册**
+- [x] **步骤 2：添加运行手册**
 
 `docs/RUNBOOK.md` 必须包含：
 
@@ -1276,7 +1276,7 @@ Test commands
 Troubleshooting
 ```
 
-- [ ] **步骤 3：运行完整验证**
+- [x] **步骤 3：运行完整验证**
 
 ```powershell
 pnpm lint
@@ -1294,7 +1294,7 @@ Build 通过
 E2E happy path 通过
 ```
 
-- [ ] **步骤 4：同步文档**
+- [x] **步骤 4：同步文档**
 
 允许更新：
 
@@ -1307,7 +1307,7 @@ E2E happy path 通过
 
 不允许在没有明确评审的情况下修改核心架构决策。
 
-- [ ] **步骤 5：提交**
+- [x] **步骤 5：提交**
 
 ```powershell
 git add apps docs

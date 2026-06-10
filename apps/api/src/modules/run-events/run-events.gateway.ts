@@ -30,7 +30,8 @@ export class RunEventsGateway implements OnModuleInit, OnModuleDestroy, OnGatewa
 
   private readonly logger = new Logger(RunEventsGateway.name);
   private readonly subscriber = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
-    maxRetriesPerRequest: null
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false
   });
 
   async onModuleInit() {

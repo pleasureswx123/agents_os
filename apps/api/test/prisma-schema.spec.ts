@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
 
+process.env.DATABASE_URL ??= 'postgresql://agents_os:agents_os@localhost:5432/agents_os';
+
 const prisma = new PrismaClient();
 
 describe('seeded Prisma schema', () => {

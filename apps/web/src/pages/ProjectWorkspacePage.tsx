@@ -11,7 +11,7 @@ interface ProjectDetail {
   workflows: Array<{ id: string; name: string; nodes: Array<{ id: string }> }>;
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('agents_os_access_token');
   return token ? { authorization: `Bearer ${token}` } : {};
 }
