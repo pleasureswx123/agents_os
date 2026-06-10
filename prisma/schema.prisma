@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users           User[]
+  projects        Project[]
+  providerConfigs ProviderConfig[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String   @unique
+  passwordHash   String
+  name           String?
+  role           String   @default("admin")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  projects     Project[]
+}
+
+model ProviderConfig {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  type           String
+  baseUrl        String?
+  apiKeyRef      String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions TemplateVersion[]
+
+  @@index([type])
+}
+
+model TemplateVersion {
+  id          String   @id @default(cuid())
+  templateId  String
+  versionName String
+  snapshot    Json
+  createdAt   DateTime @default(now())
+
+  template Template  @relation(fields: [templateId], references: [id])
+  projects Project[]
+
+  @@index([templateId])
+}
+
+model Project {
+  id                String   @id @default(cuid())
+  organizationId    String
+  createdByUserId   String?
+  templateVersionId String?
+  name              String
+  description       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  createdBy       User?            @relation(fields: [createdByUserId], references: [id])
+  templateVersion TemplateVersion? @relation(fields: [templateVersionId], references: [id])
+  agents          Agent[]
+  workflows       Workflow[]
+  publishedApps   PublishedApp[]
+  workflowRuns    WorkflowRun[]
+  artifacts       Artifact[]
+  testCases       TestCase[]
+
+  @@index([organizationId])
+  @@index([templateVersionId])
+}
+
+model Agent {
+  id               String   @id @default(cuid())
+  projectId        String
+  name             String
+  description      String?
+  draftConfig      Json
+  currentVersionId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  project      Project        @relation(fields: [projectId], references: [id])
+  versions     AgentVersion[]
+  chatSessions ChatSession[]
+  testCases    TestCase[]
+
+  @@index([projectId])
+}
+
+model AgentVersion {
+  id             String   @id @default(cuid())
+  agentId        String
+  versionName    String
+  configSnapshot Json
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  agent         Agent          @relation(fields: [agentId], references: [id])
+  workflowNodes WorkflowNode[]
+  testResults   TestResult[]
+
+  @@index([agentId])
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  agentId   String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent    Agent         @relation(fields: [agentId], references: [id])
+  messages ChatMessage[]
+
+  @@index([agentId])
+}
+
+model ChatMessage {
+  id            String   @id @default(cuid())
+  chatSessionId String
+  role          String
+  content       String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  chatSession ChatSession @relation(fields: [chatSessionId], references: [id])
+
+  @@index([chatSessionId])
+}
+
+model TestCase {
+  id                       String   @id @default(cuid())
+  projectId                String
+  agentId                  String
+  name                     String
+  input                    Json
+  expectedNotes            String?
+  createdFromChatMessageId String?
+  createdAt                DateTime @default(now())
+
+  project Project      @relation(fields: [projectId], references: [id])
+  agent   Agent        @relation(fields: [agentId], references: [id])
+  results TestResult[]
+
+  @@index([projectId])
+  @@index([agentId])
+}
+
+model TestResult {
+  id             String   @id @default(cuid())
+  testCaseId     String
+  agentVersionId String
+  output         Json
+  rating         String?
+  notes          String?
+  usage          Json?
+  createdAt      DateTime @default(now())
+
+  testCase     TestCase     @relation(fields: [testCaseId], references: [id])
+  agentVersion AgentVersion @relation(fields: [agentVersionId], references: [id])
+
+  @@index([testCaseId])
+  @@index([agentVersionId])
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project            @relation(fields: [projectId], references: [id])
+  nodes     WorkflowNode[]
+  snapshots WorkflowSnapshot[]
+  runs      WorkflowRun[]
+
+  @@index([projectId])
+}
+
+model WorkflowNode {
+  id              String  @id @default(cuid())
+  workflowId      String
+  orderIndex      Int
+  name            String
+  type            String  @default("agent")
+  agentVersionId  String?
+  position        Json?
+  inputMapping    Json
+  outputKey       String
+  allowManualEdit Boolean @default(true)
+  failurePolicy   String  @default("stop")
+  enabled         Boolean @default(true)
+
+  workflow     Workflow          @relation(fields: [workflowId], references: [id])
+  agentVersion AgentVersion?     @relation(fields: [agentVersionId], references: [id])
+  nodeRuns     WorkflowNodeRun[]
+
+  @@index([workflowId, orderIndex])
+  @@index([agentVersionId])
+}
+
+model WorkflowSnapshot {
+  id          String   @id @default(cuid())
+  workflowId  String
+  versionName String
+  snapshot    Json
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  workflow Workflow       @relation(fields: [workflowId], references: [id])
+  apps     PublishedApp[]
+  runs     WorkflowRun[]
+
+  @@index([workflowId])
+}
+
+model PublishedApp {
+  id                 String   @id @default(cuid())
+  projectId          String
+  workflowSnapshotId String
+  slug               String   @unique
+  name               String
+  description        String?
+  publicInputSchema  Json
+  publicParams       Json?
+  branding           Json?
+  accessPolicy       Json?
+  status             String   @default("draft")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  project          Project          @relation(fields: [projectId], references: [id])
+  workflowSnapshot WorkflowSnapshot @relation(fields: [workflowSnapshotId], references: [id])
+  runs             WorkflowRun[]
+
+  @@index([projectId])
+  @@index([workflowSnapshotId])
+}
+
+model WorkflowRun {
+  id                 String    @id @default(cuid())
+  projectId          String
+  workflowId         String?
+  workflowSnapshotId String?
+  publishedAppId     String?
+  source             String
+  status             String
+  initialInput       Json
+  controlState       Json?
+  usage              Json?
+  errorSummary       String?
+  queuedAt           DateTime  @default(now())
+  startedAt          DateTime?
+  finishedAt         DateTime?
+
+  project          Project           @relation(fields: [projectId], references: [id])
+  workflow         Workflow?         @relation(fields: [workflowId], references: [id])
+  workflowSnapshot WorkflowSnapshot? @relation(fields: [workflowSnapshotId], references: [id])
+  publishedApp     PublishedApp?     @relation(fields: [publishedAppId], references: [id])
+  nodeRuns         WorkflowNodeRun[]
+  artifacts        Artifact[]
+  usageRecords     UsageRecord[]
+
+  @@index([projectId, status])
+  @@index([publishedAppId])
+}
+
+model WorkflowNodeRun {
+  id                String    @id @default(cuid())
+  workflowRunId     String
+  workflowNodeId    String?
+  rerunOfNodeRunId  String?
+  status            String
+  input             Json
+  output            Json?
+  editedOutput      Json?
+  rawOutput         String?
+  parseError        Json?
+  error             Json?
+  usage             Json?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+
+  workflowRun  WorkflowRun    @relation(fields: [workflowRunId], references: [id])
+  workflowNode WorkflowNode?   @relation(fields: [workflowNodeId], references: [id])
+  artifacts    Artifact[]
+
+  @@index([workflowRunId])
+  @@index([workflowNodeId])
+}
+
+model Artifact {
+  id                String   @id @default(cuid())
+  projectId         String
+  workflowRunId     String
+  workflowNodeRunId String?
+  type              String
+  objectKey         String
+  filename          String?
+  contentType       String?
+  sizeBytes         Int?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  project         Project          @relation(fields: [projectId], references: [id])
+  workflowRun     WorkflowRun      @relation(fields: [workflowRunId], references: [id])
+  workflowNodeRun WorkflowNodeRun? @relation(fields: [workflowNodeRunId], references: [id])
+
+  @@index([workflowRunId])
+  @@index([workflowNodeRunId])
+}
+
+model UsageRecord {
+  id               String   @id @default(cuid())
+  workflowRunId    String
+  scope            String
+  providerType     String?
+  providerName     String?
+  modelId          String?
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  durationMs       Int?
+  estimatedCost    Decimal?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id])
+
+  @@index([workflowRunId])
+}
