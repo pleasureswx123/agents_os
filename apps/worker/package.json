@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@agents-os/shared": "workspace:*",
+    "@prisma/client": "^6.1.0",
     "bullmq": "^5.34.2",
     "ioredis": "^5.4.2"
   },

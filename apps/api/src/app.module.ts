@@ -10,6 +10,8 @@ import { ProvidersModule } from './modules/providers/providers.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
+import { RunEventsModule } from './modules/run-events/run-events.module';
+import { WorkflowRunsModule } from './modules/workflow-runs/workflow-runs.module';
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
     EvaluationsModule,
     TemplatesModule,
     ProjectsModule,
-    WorkflowsModule
+    WorkflowsModule,
+    RunEventsModule,
+    WorkflowRunsModule
   ]
 })
 export class AppModule {}
