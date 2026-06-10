@@ -70,6 +70,7 @@ export function ProjectWorkspacePage() {
           <Link to={`/projects/${project.id}/agents`}>Agent Studio</Link>
           <Link to={`/projects/${project.id}/evaluations`}>Evaluation Lab</Link>
           <Link to={`/projects/${project.id}/workflows`}>Workflow Builder</Link>
+          <Link to="/app/story-material-demo">Published App</Link>
         </div>
       </section>
 

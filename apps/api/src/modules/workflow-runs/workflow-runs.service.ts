@@ -52,6 +52,31 @@ export class WorkflowRunsService {
     return run;
   }
 
+  async createFromPublishedApp(
+    app: { id: string; projectId: string; workflowSnapshotId: string },
+    input: Record<string, unknown>
+  ) {
+    const snapshot = await this.prisma.workflowSnapshot.findUnique({ where: { id: app.workflowSnapshotId } });
+    if (!snapshot) {
+      throw new NotFoundException({ code: 'WORKFLOW_SNAPSHOT_NOT_FOUND', message: 'WorkflowSnapshot 不存在' });
+    }
+
+    const run = await this.prisma.workflowRun.create({
+      data: {
+        projectId: app.projectId,
+        workflowId: snapshot.workflowId,
+        workflowSnapshotId: app.workflowSnapshotId,
+        publishedAppId: app.id,
+        source: 'published_app',
+        status: 'queued',
+        initialInput: input as Prisma.InputJsonValue,
+        controlState: { outputs: {} }
+      }
+    });
+    await this.queue.enqueue({ workflowRunId: run.id });
+    return run;
+  }
+
   async rerunNode(runId: string, nodeRunId: string) {
     const nodeRun = await this.prisma.workflowNodeRun.findUnique({ where: { id: nodeRunId } });
     if (!nodeRun || nodeRun.workflowRunId !== runId) {

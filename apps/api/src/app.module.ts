@@ -13,6 +13,7 @@ import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { RunEventsModule } from './modules/run-events/run-events.module';
 import { WorkflowRunsModule } from './modules/workflow-runs/workflow-runs.module';
 import { ArtifactsModule } from './modules/artifact-exports/artifacts.module';
+import { PublishedAppsModule } from './modules/published-apps/published-apps.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { ArtifactsModule } from './modules/artifact-exports/artifacts.module';
     WorkflowsModule,
     RunEventsModule,
     WorkflowRunsModule,
-    ArtifactsModule
+    ArtifactsModule,
+    PublishedAppsModule
   ]
 })
 export class AppModule {}

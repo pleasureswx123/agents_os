@@ -238,6 +238,32 @@ button {
   overflow: hidden;
 }
 
+.public-app {
+  display: grid;
+  min-height: 100vh;
+  place-items: start center;
+  padding: 48px 20px;
+}
+
+.public-panel {
+  background: #ffffff;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  max-width: 760px;
+  padding: 24px;
+  width: 100%;
+}
+
+.public-panel h1 {
+  font-size: 30px;
+  margin: 0 0 8px;
+}
+
+.download-link {
+  display: inline-block;
+  margin-left: 10px;
+}
+
 @media (max-width: 720px) {
   .inline-form,
   .metrics,

@@ -4,6 +4,7 @@ import { ProjectWorkspacePage } from '../pages/ProjectWorkspacePage';
 import { AgentStudioPage } from '../pages/AgentStudioPage';
 import { EvaluationLabPage } from '../pages/EvaluationLabPage';
 import { WorkflowBuilderPage } from '../pages/WorkflowBuilderPage';
+import { PublishedAppPage } from '../pages/PublishedAppPage';
 import { ProjectsPage } from '../pages/ProjectsPage';
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
         <Route path="/projects/:projectId/evaluations/:agentId" element={<EvaluationLabPage />} />
         <Route path="/projects/:projectId/workflows" element={<WorkflowBuilderPage />} />
         <Route path="/projects/:projectId/workflows/:workflowId" element={<WorkflowBuilderPage />} />
+        <Route path="/app/:slug" element={<PublishedAppPage />} />
       </Routes>
     </BrowserRouter>
   );
