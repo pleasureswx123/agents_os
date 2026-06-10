@@ -12,6 +12,7 @@ import { TemplatesModule } from './modules/templates/templates.module';
 import { WorkflowsModule } from './modules/workflows/workflows.module';
 import { RunEventsModule } from './modules/run-events/run-events.module';
 import { WorkflowRunsModule } from './modules/workflow-runs/workflow-runs.module';
+import { ArtifactsModule } from './modules/artifact-exports/artifacts.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { WorkflowRunsModule } from './modules/workflow-runs/workflow-runs.module
     ProjectsModule,
     WorkflowsModule,
     RunEventsModule,
-    WorkflowRunsModule
+    WorkflowRunsModule,
+    ArtifactsModule
   ]
 })
 export class AppModule {}
