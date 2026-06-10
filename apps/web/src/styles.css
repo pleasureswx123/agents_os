@@ -230,6 +230,14 @@ button {
   padding: 10px;
 }
 
+.flow-canvas {
+  background: #ffffff;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  height: 560px;
+  overflow: hidden;
+}
+
 @media (max-width: 720px) {
   .inline-form,
   .metrics,

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@agents-os/shared": "workspace:*",
+    "@xyflow/react": "^12.3.6",
     "@vitejs/plugin-react": "^4.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

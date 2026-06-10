@@ -9,6 +9,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { ProvidersModule } from './modules/providers/providers.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TemplatesModule } from './modules/templates/templates.module';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { TemplatesModule } from './modules/templates/templates.module';
     ChatsModule,
     EvaluationsModule,
     TemplatesModule,
-    ProjectsModule
+    ProjectsModule,
+    WorkflowsModule
   ]
 })
 export class AppModule {}
