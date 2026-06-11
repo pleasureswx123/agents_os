@@ -68,6 +68,20 @@ export class PublishedAppsService {
     return app;
   }
 
+  async getPublicDetails(slug: string) {
+    const app = await this.getBySlug(slug);
+    return {
+      id: app.id,
+      slug: app.slug,
+      name: app.name,
+      description: app.description,
+      publicInputSchema: app.publicInputSchema,
+      publicParams: app.publicParams,
+      branding: app.branding,
+      status: app.status
+    };
+  }
+
   async run(slug: string, body: { input?: Record<string, unknown> }) {
     const app = await this.getBySlug(slug);
     const input = body.input ?? {};
@@ -88,7 +102,22 @@ export class PublishedAppsService {
     if (!run || run.publishedAppId !== app.id) {
       throw new NotFoundException({ code: 'WORKFLOW_RUN_NOT_FOUND', message: 'WorkflowRun 不存在' });
     }
-    return run;
+    return {
+      id: run.id,
+      status: run.status,
+      errorSummary: run.errorSummary,
+      queuedAt: run.queuedAt,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+      artifacts: run.artifacts.map((artifact) => ({
+        id: artifact.id,
+        type: artifact.type,
+        filename: artifact.filename,
+        contentType: artifact.contentType,
+        sizeBytes: artifact.sizeBytes,
+        createdAt: artifact.createdAt
+      }))
+    };
   }
 
   async getPublicArtifactDownload(slug: string, artifactId: string) {

@@ -91,7 +91,11 @@ describe('Published Apps API', () => {
 
     const publicResponse = await app.inject({ method: 'GET', url: `/api/published-apps/${slug}` });
     expect(publicResponse.statusCode).toBe(200);
-    expect(publicResponse.json().data.name).toBe('Story Material App');
+    const publicApp = publicResponse.json().data;
+    expect(publicApp.name).toBe('Story Material App');
+    expect(publicApp.workflowSnapshot).toBeUndefined();
+    expect(JSON.stringify(publicApp)).not.toContain('apiKeyRef');
+    expect(JSON.stringify(publicApp)).not.toContain('systemPrompt');
 
     const runResponse = await app.inject({
       method: 'POST',
@@ -105,5 +109,12 @@ describe('Published Apps API', () => {
     expect(run.workflowSnapshotId).toBe(snapshot.id);
     expect(run.source).toBe('published_app');
     expect((await queue.getJob(runId))?.data.workflowRunId).toBe(runId);
+
+    const publicRunResponse = await app.inject({ method: 'GET', url: `/api/published-apps/${slug}/runs/${runId}` });
+    expect(publicRunResponse.statusCode).toBe(200);
+    const publicRun = publicRunResponse.json().data;
+    expect(publicRun.id).toBe(runId);
+    expect(publicRun.initialInput).toBeUndefined();
+    expect(publicRun.controlState).toBeUndefined();
   });
 });

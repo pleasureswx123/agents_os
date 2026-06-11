@@ -20,7 +20,7 @@ export class PublishedAppsController {
 
   @Get('published-apps/:slug')
   getPublic(@Param('slug') slug: string) {
-    return this.service.getBySlug(slug);
+    return this.service.getPublicDetails(slug);
   }
 
   @Post('published-apps/:slug/runs')
