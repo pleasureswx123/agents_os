@@ -2,6 +2,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { Queue } from 'bullmq';
+import { io as createSocketClient, type Socket } from 'socket.io-client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { workflowRunQueueName, type WorkflowRunJob } from '@agents-os/shared';
 import { AppModule } from '../src/app.module';
@@ -28,6 +29,7 @@ describe('Workflow Runs API', () => {
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     configureApp(app);
     await app.init();
+    await app.listen(0, '127.0.0.1');
     await app.getHttpAdapter().getInstance().ready();
 
     const login = await app.inject({
@@ -177,6 +179,51 @@ describe('Workflow Runs API', () => {
       payload: { command: 'continue' }
     });
     expect(controlResponse.statusCode).toBe(201);
+    const job = await queue.getJob(`${run.id}__continue__${nodeRun.id}`);
+    expect(job?.data.continueAfterNodeRunId).toBe(nodeRun.id);
+  });
+
+  it('accepts run.control over Socket.IO and queues a continue job', async () => {
+    const { workflow, snapshot } = await createProjectWorkflow();
+    const run = await prisma.workflowRun.create({
+      data: {
+        projectId: workflow.projectId,
+        workflowId: workflow.id,
+        workflowSnapshotId: snapshot.id,
+        source: 'studio',
+        status: 'waiting_for_human_edit',
+        initialInput: { text: 'socket 继续' },
+        controlState: { outputs: {} }
+      }
+    });
+    const nodeRun = await prisma.workflowNodeRun.create({
+      data: {
+        workflowRunId: run.id,
+        workflowNodeId: workflow.nodes[0].id,
+        status: 'succeeded',
+        input: { text: 'socket 继续' },
+        output: { ready: true },
+        finishedAt: new Date()
+      }
+    });
+
+    const address = app.getHttpServer().address();
+    const port = typeof address === 'object' && address ? address.port : 0;
+    const socket: Socket = createSocketClient(`http://127.0.0.1:${port}/runs`, {
+      transports: ['websocket'],
+      query: { runId: run.id }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      socket.on('connect', () => resolve());
+      socket.on('connect_error', reject);
+    });
+    const applied = new Promise((resolve) => socket.once('run.control.applied', resolve));
+    const ack = await socket.emitWithAck('run.control', { workflowRunId: run.id, command: 'continue' });
+    expect(ack.accepted).toBe(true);
+    await expect(applied).resolves.toMatchObject({ workflowRunId: run.id, status: 'queued' });
+    socket.close();
+
     const job = await queue.getJob(`${run.id}__continue__${nodeRun.id}`);
     expect(job?.data.continueAfterNodeRunId).toBe(nodeRun.id);
   });

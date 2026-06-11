@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Play, RotateCcw, Save } from 'lucide-react';
 import { useParams } from 'react-router-dom';
@@ -37,6 +37,7 @@ function parseJson(value: string) {
 export function WorkflowRunPage() {
   const { runId } = useParams();
   const queryClient = useQueryClient();
+  const socketRef = useRef<ReturnType<typeof connectRunSocket> | null>(null);
   const [selectedNodeRun, setSelectedNodeRun] = useState<WorkflowNodeRun | null>(null);
   const [editorValue, setEditorValue] = useState('{}');
   const [message, setMessage] = useState('');
@@ -55,8 +56,10 @@ export function WorkflowRunPage() {
       setMessage(`Received ${eventName}`);
       void queryClient.invalidateQueries({ queryKey });
     });
+    socketRef.current = socket;
     return () => {
       socket.close();
+      socketRef.current = null;
     };
   }, [queryClient, runId]);
 
@@ -74,7 +77,24 @@ export function WorkflowRunPage() {
     }
   });
   const continueMutation = useMutation({
-    mutationFn: () => continueWorkflowRun(runId ?? ''),
+    mutationFn: () =>
+      new Promise<{ queued: boolean }>((resolve, reject) => {
+        if (!runId || !socketRef.current?.connected) {
+          void continueWorkflowRun(runId ?? '').then(resolve).catch(reject);
+          return;
+        }
+        socketRef.current.emit(
+          'run.control',
+          { workflowRunId: runId, command: 'continue' },
+          (ack: { accepted?: boolean; queued?: boolean; message?: string }) => {
+            if (ack.accepted) {
+              resolve({ queued: Boolean(ack.queued) });
+              return;
+            }
+            reject(new Error(ack.message ?? 'Run control rejected'));
+          }
+        );
+      }),
     onSuccess: () => {
       setMessage('Continue queued.');
       void queryClient.invalidateQueries({ queryKey });

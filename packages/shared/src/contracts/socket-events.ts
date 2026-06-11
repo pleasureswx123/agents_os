@@ -5,6 +5,8 @@ export const serverRunEvents = [
   'run.failed',
   'run.succeeded',
   'run.canceled',
+  'run.control.applied',
+  'run.control.rejected',
   'run.exporting',
   'run.exported'
 ] as const;

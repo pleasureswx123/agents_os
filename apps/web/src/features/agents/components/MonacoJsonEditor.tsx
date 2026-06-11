@@ -1,3 +1,5 @@
+import Editor from '@monaco-editor/react';
+
 interface MonacoJsonEditorProps {
   value: string;
   height: string;
@@ -6,13 +8,24 @@ interface MonacoJsonEditorProps {
 
 export function MonacoJsonEditor({ value, height, onChange }: MonacoJsonEditorProps) {
   return (
-    <textarea
+    <div
       aria-label="JSON editor"
       className="json-editor"
-      style={{ minHeight: height }}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      spellCheck={false}
-    />
+      style={{ minHeight: height, height }}
+    >
+      <Editor
+        height={height}
+        defaultLanguage="json"
+        value={value}
+        onChange={(nextValue) => onChange(nextValue ?? '')}
+        options={{
+          automaticLayout: true,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          tabSize: 2,
+          wordWrap: 'on'
+        }}
+      />
+    </div>
   );
 }

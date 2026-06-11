@@ -12,6 +12,8 @@ export function connectRunSocket(runId: string, onEvent: (eventName: string, pay
     'run.waiting_for_human_edit',
     'run.failed',
     'run.succeeded',
+    'run.control.applied',
+    'run.control.rejected',
     'run.exporting',
     'run.exported',
     'node.running',

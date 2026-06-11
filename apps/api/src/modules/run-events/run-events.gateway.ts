@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -10,6 +10,7 @@ import {
 import { runEventsRedisChannel, type NodeEventPayload, type RunEventPayload } from '@agents-os/shared';
 import Redis from 'ioredis';
 import type { Server, Socket } from 'socket.io';
+import { WorkflowRunsService } from '../workflow-runs/workflow-runs.service';
 
 type RedisRunEvent = {
   event: string;
@@ -33,6 +34,8 @@ export class RunEventsGateway implements OnModuleInit, OnModuleDestroy, OnGatewa
     maxRetriesPerRequest: null,
     enableReadyCheck: false
   });
+
+  constructor(@Inject(WorkflowRunsService) private readonly workflowRuns: WorkflowRunsService) {}
 
   async onModuleInit() {
     await this.subscriber.subscribe(runEventsRedisChannel);
@@ -64,6 +67,37 @@ export class RunEventsGateway implements OnModuleInit, OnModuleDestroy, OnGatewa
       return { joined: true };
     }
     return { joined: false };
+  }
+
+  @SubscribeMessage('run.control')
+  async controlRun(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { workflowRunId?: string; command?: string }
+  ) {
+    if (!body.workflowRunId) {
+      return { accepted: false, code: 'WORKFLOW_RUN_REQUIRED' };
+    }
+    await client.join(this.room(body.workflowRunId));
+    try {
+      const result = await this.workflowRuns.control(body.workflowRunId, { command: body.command });
+      this.server.to(this.room(body.workflowRunId)).emit('run.control.applied', {
+        workflowRunId: body.workflowRunId,
+        status: 'queued',
+        command: body.command,
+        timestamp: new Date().toISOString()
+      });
+      return { accepted: true, ...result };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.server.to(this.room(body.workflowRunId)).emit('run.control.rejected', {
+        workflowRunId: body.workflowRunId,
+        status: 'rejected',
+        command: body.command,
+        error: { message },
+        timestamp: new Date().toISOString()
+      });
+      return { accepted: false, message };
+    }
   }
 
   emit(eventName: string, payload: RunEventPayload | NodeEventPayload) {
