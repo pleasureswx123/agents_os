@@ -8,6 +8,7 @@ import { WorkflowBuilderPage } from '../pages/WorkflowBuilderPage';
 import { WorkflowRunPage } from '../pages/WorkflowRunPage';
 import { PublishedAppPage } from '../pages/PublishedAppPage';
 import { ProjectsPage } from '../pages/ProjectsPage';
+import { LoginPage } from '../pages/LoginPage';
 import { queryClient } from '../lib/query-client';
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
           <Route path="/projects/:projectId/agents" element={<AgentStudioPage />} />

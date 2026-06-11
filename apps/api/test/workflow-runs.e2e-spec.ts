@@ -181,6 +181,33 @@ describe('Workflow Runs API', () => {
     expect(controlResponse.statusCode).toBe(201);
     const job = await queue.getJob(`${run.id}__continue__${nodeRun.id}`);
     expect(job?.data.continueAfterNodeRunId).toBe(nodeRun.id);
+
+    await prisma.workflowRun.update({ where: { id: run.id }, data: { status: 'waiting_for_human_edit' } });
+    const resumeResponse = await app.inject({
+      method: 'POST',
+      url: `/api/workflow-runs/${run.id}/resume`,
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(resumeResponse.statusCode).toBe(201);
+    expect((await queue.getJob(`${run.id}__continue__${nodeRun.id}`))?.data.continueAfterNodeRunId).toBe(nodeRun.id);
+
+    const cancelRun = await prisma.workflowRun.create({
+      data: {
+        projectId: workflow.projectId,
+        workflowId: workflow.id,
+        workflowSnapshotId: snapshot.id,
+        source: 'studio',
+        status: 'queued',
+        initialInput: { text: '取消运行' }
+      }
+    });
+    const cancelResponse = await app.inject({
+      method: 'POST',
+      url: `/api/workflow-runs/${cancelRun.id}/cancel`,
+      headers: { authorization: `Bearer ${accessToken}` }
+    });
+    expect(cancelResponse.statusCode).toBe(201);
+    expect((await prisma.workflowRun.findUniqueOrThrow({ where: { id: cancelRun.id } })).status).toBe('canceled');
   });
 
   it('accepts run.control over Socket.IO and queues a continue job', async () => {

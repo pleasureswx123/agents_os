@@ -40,6 +40,15 @@ const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const prisma = new PrismaClient();
 const publisher = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
+class NodeExecutionError extends Error {
+  constructor(
+    message: string,
+    readonly nodeRunId: string
+  ) {
+    super(message);
+  }
+}
+
 function timestamp() {
   return new Date().toISOString();
 }
@@ -147,6 +156,7 @@ async function loadNodes(runId: string): Promise<SnapshotNode[]> {
 }
 
 async function executeNode(workflowRunId: string, node: SnapshotNode, workflowInput: Record<string, unknown>, outputs: Record<string, unknown>, rerunOfNodeRunId?: string) {
+  const startedAt = new Date();
   const input = mapInput(node.inputMapping, workflowInput, outputs);
   const nodeRun = await prisma.workflowNodeRun.create({
     data: {
@@ -155,7 +165,7 @@ async function executeNode(workflowRunId: string, node: SnapshotNode, workflowIn
       rerunOfNodeRunId,
       status: 'running',
       input: input as Prisma.InputJsonValue,
-      startedAt: new Date()
+      startedAt
     }
   });
   await publish('node.running', {
@@ -192,7 +202,12 @@ async function executeNode(workflowRunId: string, node: SnapshotNode, workflowIn
       status: 'succeeded',
       outputPreview: parsed.output
     });
-    return { nodeRunId: nodeRun.id, output: parsed.output };
+    return {
+      nodeRunId: nodeRun.id,
+      output: parsed.output,
+      usage: response.usage,
+      durationMs: Date.now() - startedAt.getTime()
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await prisma.workflowNodeRun.update({
@@ -210,11 +225,28 @@ async function executeNode(workflowRunId: string, node: SnapshotNode, workflowIn
       status: 'failed',
       error: { message }
     });
-    throw error;
+    throw new NodeExecutionError(message, nodeRun.id);
   }
 }
 
-async function executeRun(job: WorkflowRunJob) {
+async function recordUsage(workflowRunId: string, node: SnapshotNode, result: { usage: { promptTokens?: number; completionTokens?: number; totalTokens?: number }; durationMs: number }) {
+  const config = node.agentVersionSnapshot?.configSnapshot;
+  await prisma.usageRecord.create({
+    data: {
+      workflowRunId,
+      scope: 'workflow_node',
+      providerType: 'openai-compatible',
+      modelId: config?.provider.modelId,
+      promptTokens: result.usage.promptTokens,
+      completionTokens: result.usage.completionTokens,
+      totalTokens: result.usage.totalTokens,
+      durationMs: result.durationMs,
+      metadata: { workflowNodeId: node.id, outputKey: node.outputKey } as Prisma.InputJsonValue
+    }
+  });
+}
+
+export async function executeRun(job: WorkflowRunJob) {
   const run = await prisma.workflowRun.findUniqueOrThrow({ where: { id: job.workflowRunId } });
   const workflowInput = run.initialInput as Record<string, unknown>;
   const nodes = await loadNodes(job.workflowRunId);
@@ -241,7 +273,27 @@ async function executeRun(job: WorkflowRunJob) {
 
   try {
     for (const node of nodesToRun) {
-      const result = await executeNode(job.workflowRunId, node, workflowInput, outputs, retryNode?.id);
+      let result: Awaited<ReturnType<typeof executeNode>>;
+      try {
+        result = await executeNode(job.workflowRunId, node, workflowInput, outputs, retryNode?.id);
+      } catch (error) {
+        if (!retryNode && node.failurePolicy === 'skip' && error instanceof NodeExecutionError) {
+          await prisma.workflowNodeRun.update({
+            where: { id: error.nodeRunId },
+            data: { status: 'skipped' }
+          });
+          await publish('node.skipped', {
+            workflowRunId: job.workflowRunId,
+            workflowNodeId: node.id,
+            workflowNodeRunId: error.nodeRunId,
+            status: 'skipped',
+            error: { message: error.message }
+          });
+          continue;
+        }
+        throw error;
+      }
+      await recordUsage(job.workflowRunId, node, result);
       await prisma.workflowRun.update({
         where: { id: job.workflowRunId },
         data: { controlState: { outputs } as Prisma.InputJsonValue }

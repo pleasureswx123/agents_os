@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/main';
+import { StorageProvider } from '../src/modules/object-storage/storage.provider';
 
 const prisma = new PrismaClient();
 
@@ -101,6 +102,27 @@ describe('Artifact Export API', () => {
     expect(artifact.objectKey).toContain('package.zip');
     expect(artifact.filename).toBe('package.zip');
     expect(artifact.contentType).toBe('application/zip');
+    expect(artifact.metadata.manifest.files).toEqual(
+      expect.arrayContaining([
+        'README.md',
+        'manifest.json',
+        'material-package.json',
+        '01_script/storyboard.md',
+        '01_script/narration.md',
+        '02_voiceover/voiceover_tasks.json',
+        '03_dialogue/dialogue_tasks.json',
+        '04_video_clips/video_tasks.json',
+        '05_images/image_prompts.json',
+        '06_sfx/sfx_tasks.json',
+        '07_subtitles/subtitles.srt',
+        'edit_plan.csv'
+      ])
+    );
+    const zipBody = await app.get(StorageProvider).getObject(artifact.objectKey);
+    const zipText = zipBody.toString('utf8');
+    expect(readZipEntryNames(zipBody)).toEqual(expect.arrayContaining(artifact.metadata.manifest.files));
+    expect(zipText).not.toContain('apiKeyRef');
+    expect(zipText).not.toContain('test-provider-key');
 
     const updatedRun = await prisma.workflowRun.findUniqueOrThrow({ where: { id: run.id } });
     expect(updatedRun.status).toBe('exported');
@@ -114,3 +136,17 @@ describe('Artifact Export API', () => {
     expect(downloadResponse.json().data.url).toContain('X-Amz-Signature');
   });
 });
+
+function readZipEntryNames(buffer: Buffer) {
+  const names: string[] = [];
+  let offset = 0;
+  while (offset < buffer.length - 30) {
+    if (buffer.readUInt32LE(offset) !== 0x04034b50) break;
+    const compressedSize = buffer.readUInt32LE(offset + 18);
+    const nameLength = buffer.readUInt16LE(offset + 26);
+    const extraLength = buffer.readUInt16LE(offset + 28);
+    names.push(buffer.subarray(offset + 30, offset + 30 + nameLength).toString('utf8'));
+    offset += 30 + nameLength + extraLength + compressedSize;
+  }
+  return names;
+}

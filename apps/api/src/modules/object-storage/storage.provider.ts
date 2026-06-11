@@ -1,6 +1,5 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { CreateBucketCommand, HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { CreateBucketCommand, GetObjectCommand, HeadBucketCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export interface PutObjectInput {
@@ -44,6 +43,25 @@ export class StorageProvider implements OnModuleDestroy {
       }),
       { expiresIn: 60 * 10 }
     );
+  }
+
+  async getObject(objectKey: string) {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: objectKey
+      })
+    );
+    return Buffer.from(await response.Body!.transformToByteArray());
+  }
+
+  async objectExists(objectKey: string) {
+    try {
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: objectKey }));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async onModuleDestroy() {

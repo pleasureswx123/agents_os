@@ -122,8 +122,11 @@ export class WorkflowRunsService {
   }
 
   async control(runId: string, body: { command?: string }) {
-    if (body.command !== 'continue') {
-      throw new BadRequestException({ code: 'RUN_CONTROL_UNSUPPORTED', message: '仅支持 continue 控制命令' });
+    if (body.command === 'cancel') {
+      return this.cancel(runId);
+    }
+    if (body.command !== 'continue' && body.command !== 'resume') {
+      throw new BadRequestException({ code: 'RUN_CONTROL_UNSUPPORTED', message: '仅支持 continue、resume、cancel 控制命令' });
     }
 
     const run = await this.prisma.workflowRun.findUnique({
@@ -147,5 +150,24 @@ export class WorkflowRunsService {
     });
     await this.queue.enqueue({ workflowRunId: runId, continueAfterNodeRunId: lastNodeRun.id });
     return { queued: true, continueAfterNodeRunId: lastNodeRun.id };
+  }
+
+  async resume(runId: string) {
+    return this.control(runId, { command: 'resume' });
+  }
+
+  async cancel(runId: string) {
+    const run = await this.prisma.workflowRun.findUnique({ where: { id: runId } });
+    if (!run) {
+      throw new NotFoundException({ code: 'WORKFLOW_RUN_NOT_FOUND', message: 'WorkflowRun 不存在' });
+    }
+    if (['succeeded', 'exported', 'failed', 'canceled'].includes(run.status)) {
+      throw new BadRequestException({ code: 'RUN_NOT_CANCELABLE', message: 'WorkflowRun 当前不可取消' });
+    }
+    await this.prisma.workflowRun.update({
+      where: { id: runId },
+      data: { status: 'canceled', finishedAt: new Date() }
+    });
+    return { canceled: true };
   }
 }

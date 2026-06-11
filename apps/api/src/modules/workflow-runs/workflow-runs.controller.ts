@@ -35,4 +35,14 @@ export class WorkflowRunsController {
   control(@Param('runId') runId: string, @Body() body: { command?: string }) {
     return this.service.control(runId, body);
   }
+
+  @Post('workflow-runs/:runId/resume')
+  resume(@Param('runId') runId: string) {
+    return this.service.resume(runId);
+  }
+
+  @Post('workflow-runs/:runId/cancel')
+  cancel(@Param('runId') runId: string) {
+    return this.service.cancel(runId);
+  }
 }

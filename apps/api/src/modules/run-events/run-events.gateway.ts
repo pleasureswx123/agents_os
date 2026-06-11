@@ -80,12 +80,20 @@ export class RunEventsGateway implements OnModuleInit, OnModuleDestroy, OnGatewa
     await client.join(this.room(body.workflowRunId));
     try {
       const result = await this.workflowRuns.control(body.workflowRunId, { command: body.command });
+      const status = body.command === 'cancel' ? 'canceled' : 'queued';
       this.server.to(this.room(body.workflowRunId)).emit('run.control.applied', {
         workflowRunId: body.workflowRunId,
-        status: 'queued',
+        status,
         command: body.command,
         timestamp: new Date().toISOString()
       });
+      if (body.command === 'cancel') {
+        this.server.to(this.room(body.workflowRunId)).emit('run.canceled', {
+          workflowRunId: body.workflowRunId,
+          status,
+          timestamp: new Date().toISOString()
+        });
+      }
       return { accepted: true, ...result };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
