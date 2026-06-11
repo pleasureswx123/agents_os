@@ -31,6 +31,7 @@ type SnapshotNode = {
   } | null;
   inputMapping: Record<string, unknown>;
   outputKey: string;
+  allowManualEdit: boolean;
   failurePolicy: string;
   enabled: boolean;
 };
@@ -138,6 +139,7 @@ async function loadNodes(runId: string): Promise<SnapshotNode[]> {
         : null,
       inputMapping: node.inputMapping as Record<string, unknown>,
       outputKey: node.outputKey,
+      allowManualEdit: node.allowManualEdit,
       failurePolicy: node.failurePolicy,
       enabled: node.enabled
     })) ?? []
@@ -221,7 +223,15 @@ async function executeRun(job: WorkflowRunJob) {
   const retryNode = job.retryNodeRunId
     ? await prisma.workflowNodeRun.findUniqueOrThrow({ where: { id: job.retryNodeRunId } })
     : null;
-  const nodesToRun = retryNode ? nodes.filter((node) => node.id === retryNode.workflowNodeId) : nodes;
+  const continueAfterNodeRun = job.continueAfterNodeRunId
+    ? await prisma.workflowNodeRun.findUniqueOrThrow({ where: { id: job.continueAfterNodeRunId } })
+    : null;
+  const startIndex = continueAfterNodeRun
+    ? nodes.findIndex((node) => node.id === continueAfterNodeRun.workflowNodeId) + 1
+    : 0;
+  const nodesToRun = retryNode
+    ? nodes.filter((node) => node.id === retryNode.workflowNodeId)
+    : nodes.slice(Math.max(startIndex, 0));
 
   await prisma.workflowRun.update({
     where: { id: job.workflowRunId },
@@ -231,11 +241,36 @@ async function executeRun(job: WorkflowRunJob) {
 
   try {
     for (const node of nodesToRun) {
-      await executeNode(job.workflowRunId, node, workflowInput, outputs, retryNode?.id);
+      const result = await executeNode(job.workflowRunId, node, workflowInput, outputs, retryNode?.id);
       await prisma.workflowRun.update({
         where: { id: job.workflowRunId },
         data: { controlState: { outputs } as Prisma.InputJsonValue }
       });
+      const nodeIndex = nodes.findIndex((candidate) => candidate.id === node.id);
+      const hasNextNode = nodeIndex >= 0 && nodeIndex < nodes.length - 1;
+      if (!retryNode && node.allowManualEdit && hasNextNode) {
+        await prisma.workflowRun.update({
+          where: { id: job.workflowRunId },
+          data: {
+            status: 'waiting_for_human_edit',
+            controlState: {
+              outputs,
+              waitingFor: {
+                workflowNodeId: node.id,
+                workflowNodeRunId: result.nodeRunId,
+                outputKey: node.outputKey
+              }
+            } as Prisma.InputJsonValue
+          }
+        });
+        await publish('run.waiting_for_human_edit', {
+          workflowRunId: job.workflowRunId,
+          status: 'waiting_for_human_edit',
+          workflowNodeId: node.id,
+          workflowNodeRunId: result.nodeRunId
+        });
+        return;
+      }
     }
     await prisma.workflowRun.update({
       where: { id: job.workflowRunId },

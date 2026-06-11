@@ -12,8 +12,13 @@ export class WorkflowRunsQueue implements OnModuleDestroy {
   });
 
   async enqueue(job: WorkflowRunJob) {
+    const jobId = job.retryNodeRunId
+      ? `${job.workflowRunId}__retry__${job.retryNodeRunId}`
+      : job.continueAfterNodeRunId
+        ? `${job.workflowRunId}__continue__${job.continueAfterNodeRunId}`
+        : job.workflowRunId;
     return this.queue.add('execute', job, {
-      jobId: job.retryNodeRunId ? `${job.workflowRunId}__${job.retryNodeRunId}` : job.workflowRunId,
+      jobId,
       removeOnComplete: 100,
       removeOnFail: 100
     });

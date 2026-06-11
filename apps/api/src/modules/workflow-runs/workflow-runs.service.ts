@@ -89,4 +89,63 @@ export class WorkflowRunsService {
     await this.queue.enqueue({ workflowRunId: runId, retryNodeRunId: nodeRunId });
     return { queued: true };
   }
+
+  async updateEditedOutput(runId: string, nodeRunId: string, body: { editedOutput?: unknown }) {
+    const nodeRun = await this.prisma.workflowNodeRun.findUnique({
+      where: { id: nodeRunId },
+      include: { workflowRun: true, workflowNode: true }
+    });
+    if (!nodeRun || nodeRun.workflowRunId !== runId) {
+      throw new NotFoundException({ code: 'NODE_RUN_NOT_FOUND', message: 'NodeRun 不存在' });
+    }
+    if (nodeRun.status !== 'succeeded') {
+      throw new BadRequestException({ code: 'NODE_RUN_NOT_EDITABLE', message: '只有成功完成的 NodeRun 可以编辑输出' });
+    }
+
+    const editedOutput = body.editedOutput ?? {};
+    const state = (nodeRun.workflowRun.controlState as { outputs?: Record<string, unknown> } | null) ?? { outputs: {} };
+    const outputs = { ...(state.outputs ?? {}) };
+    const outputKey = nodeRun.workflowNode?.outputKey;
+    if (outputKey) {
+      outputs[outputKey] = editedOutput;
+    }
+
+    const updated = await this.prisma.workflowNodeRun.update({
+      where: { id: nodeRunId },
+      data: { editedOutput: editedOutput as Prisma.InputJsonValue }
+    });
+    await this.prisma.workflowRun.update({
+      where: { id: runId },
+      data: { controlState: { ...state, outputs } as Prisma.InputJsonValue }
+    });
+    return updated;
+  }
+
+  async control(runId: string, body: { command?: string }) {
+    if (body.command !== 'continue') {
+      throw new BadRequestException({ code: 'RUN_CONTROL_UNSUPPORTED', message: '仅支持 continue 控制命令' });
+    }
+
+    const run = await this.prisma.workflowRun.findUnique({
+      where: { id: runId },
+      include: { nodeRuns: { where: { status: 'succeeded' }, orderBy: { finishedAt: 'desc' }, take: 1 } }
+    });
+    if (!run) {
+      throw new NotFoundException({ code: 'WORKFLOW_RUN_NOT_FOUND', message: 'WorkflowRun 不存在' });
+    }
+    if (run.status !== 'waiting_for_human_edit') {
+      throw new BadRequestException({ code: 'RUN_NOT_WAITING_FOR_EDIT', message: 'WorkflowRun 当前不在人工编辑等待状态' });
+    }
+    const lastNodeRun = run.nodeRuns[0];
+    if (!lastNodeRun) {
+      throw new BadRequestException({ code: 'RUN_CONTROL_STATE_INVALID', message: '缺少可继续的 NodeRun' });
+    }
+
+    await this.prisma.workflowRun.update({
+      where: { id: runId },
+      data: { status: 'queued', errorSummary: null }
+    });
+    await this.queue.enqueue({ workflowRunId: runId, continueAfterNodeRunId: lastNodeRun.id });
+    return { queued: true, continueAfterNodeRunId: lastNodeRun.id };
+  }
 }

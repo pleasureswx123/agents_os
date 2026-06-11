@@ -130,7 +130,54 @@ describe('Workflow Runs API', () => {
     expect(response.statusCode).toBe(201);
     const updated = await prisma.workflowRun.findUniqueOrThrow({ where: { id: run.id } });
     expect(updated.status).toBe('rerunning');
-    const job = await queue.getJob(`${run.id}__${failedNodeRun.id}`);
+    const job = await queue.getJob(`${run.id}__retry__${failedNodeRun.id}`);
     expect(job?.data.retryNodeRunId).toBe(failedNodeRun.id);
+  });
+
+  it('saves edited node output and queues a continue control job', async () => {
+    const { workflow, snapshot } = await createProjectWorkflow();
+    const run = await prisma.workflowRun.create({
+      data: {
+        projectId: workflow.projectId,
+        workflowId: workflow.id,
+        workflowSnapshotId: snapshot.id,
+        source: 'studio',
+        status: 'waiting_for_human_edit',
+        initialInput: { text: '人工编辑继续' },
+        controlState: { outputs: { [workflow.nodes[0].outputKey]: { draft: true } } }
+      }
+    });
+    const nodeRun = await prisma.workflowNodeRun.create({
+      data: {
+        workflowRunId: run.id,
+        workflowNodeId: workflow.nodes[0].id,
+        status: 'succeeded',
+        input: { text: '人工编辑继续' },
+        output: { draft: true },
+        finishedAt: new Date()
+      }
+    });
+
+    const editedResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/workflow-runs/${run.id}/node-runs/${nodeRun.id}/edited-output`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { editedOutput: { approved: true } }
+    });
+    expect(editedResponse.statusCode).toBe(200);
+    const editedRun = await prisma.workflowRun.findUniqueOrThrow({ where: { id: run.id } });
+    expect((editedRun.controlState as { outputs: Record<string, unknown> }).outputs[workflow.nodes[0].outputKey]).toEqual({
+      approved: true
+    });
+
+    const controlResponse = await app.inject({
+      method: 'POST',
+      url: `/api/workflow-runs/${run.id}/control`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { command: 'continue' }
+    });
+    expect(controlResponse.statusCode).toBe(201);
+    const job = await queue.getJob(`${run.id}__continue__${nodeRun.id}`);
+    expect(job?.data.continueAfterNodeRunId).toBe(nodeRun.id);
   });
 });

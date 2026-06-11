@@ -33,6 +33,11 @@ export class PublishedAppsController {
     return this.service.getPublicRun(slug, runId);
   }
 
+  @Post('published-apps/:slug/runs/:runId/export')
+  exportPublicRun(@Param('slug') slug: string, @Param('runId') runId: string) {
+    return this.service.exportPublicRun(slug, runId);
+  }
+
   @Get('published-apps/:slug/artifacts/:artifactId/download')
   getPublicArtifactDownload(@Param('slug') slug: string, @Param('artifactId') artifactId: string) {
     return this.service.getPublicArtifactDownload(slug, artifactId);

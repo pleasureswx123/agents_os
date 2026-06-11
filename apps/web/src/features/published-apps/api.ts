@@ -39,6 +39,12 @@ export async function getPublishedRun(slug: string, runId: string) {
   return readData<PublicRun>(await fetch(`${apiBase}/api/published-apps/${slug}/runs/${runId}`));
 }
 
+export async function exportPublishedRun(slug: string, runId: string) {
+  return readData<{ id: string; filename?: string; type: string }>(
+    await fetch(`${apiBase}/api/published-apps/${slug}/runs/${runId}/export`, { method: 'POST' })
+  );
+}
+
 export async function getArtifactDownloadUrl(slug: string, artifactId: string) {
   return readData<{ url: string; filename?: string }>(
     await fetch(`${apiBase}/api/published-apps/${slug}/artifacts/${artifactId}/download`)

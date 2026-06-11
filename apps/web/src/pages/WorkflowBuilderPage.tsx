@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { createWorkflowNode, createWorkflowSnapshot, getWorkflow, listWorkflows, updateWorkflowNode, type Workflow, type WorkflowNode } from '../features/workflows/api';
+import { createWorkflowRun } from '../features/workflow-runs/api';
 import { CreateSnapshotDialog } from '../features/workflows/components/CreateSnapshotDialog';
 import { WorkflowCanvas } from '../features/workflows/components/WorkflowCanvas';
 import { WorkflowNodeConfigPanel } from '../features/workflows/components/WorkflowNodeConfigPanel';
 
 export function WorkflowBuilderPage() {
   const { projectId, workflowId } = useParams();
+  const navigate = useNavigate();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [workflow, setWorkflow] = useState<Workflow | null>(null);
   const [selectedNode, setSelectedNode] = useState<WorkflowNode>();
@@ -52,6 +54,12 @@ export function WorkflowBuilderPage() {
     setMessage('Snapshot created.');
   }
 
+  async function runWorkflow() {
+    if (!workflow || !projectId) return;
+    const run = await createWorkflowRun(workflow.id, { text: '从工作台启动的测试文本' });
+    navigate(`/projects/${projectId}/runs/${run.id}`);
+  }
+
   return (
     <main className="studio-shell">
       <aside className="agent-list">
@@ -67,6 +75,9 @@ export function WorkflowBuilderPage() {
           <div className="tabs">
             <button type="button" onClick={addNode}>
               Add Node
+            </button>
+            <button type="button" onClick={runWorkflow}>
+              Run Workflow
             </button>
             <CreateSnapshotDialog onCreate={snapshot} />
           </div>

@@ -116,5 +116,29 @@ describe('Published Apps API', () => {
     expect(publicRun.id).toBe(runId);
     expect(publicRun.initialInput).toBeUndefined();
     expect(publicRun.controlState).toBeUndefined();
+
+    await prisma.workflowRun.update({ where: { id: runId }, data: { status: 'succeeded', finishedAt: new Date() } });
+    await prisma.workflowNodeRun.create({
+      data: {
+        workflowRunId: runId,
+        workflowNodeId: null,
+        status: 'succeeded',
+        input: { text: '公开运行文本' },
+        output: { material: 'package' },
+        finishedAt: new Date()
+      }
+    });
+
+    const exportResponse = await app.inject({ method: 'POST', url: `/api/published-apps/${slug}/runs/${runId}/export` });
+    expect(exportResponse.statusCode).toBe(201);
+    const artifact = exportResponse.json().data;
+    expect(artifact.workflowRunId).toBe(runId);
+
+    const downloadResponse = await app.inject({
+      method: 'GET',
+      url: `/api/published-apps/${slug}/artifacts/${artifact.id}/download`
+    });
+    expect(downloadResponse.statusCode).toBe(200);
+    expect(downloadResponse.json().data.url).toContain('/package.zip');
   });
 });

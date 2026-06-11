@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
+  exportPublishedRun,
   getArtifactDownloadUrl,
   getPublishedApp,
   getPublishedRun,
@@ -8,6 +9,7 @@ import {
   type PublishedApp,
   type PublicRun
 } from '../features/published-apps/api';
+import { connectRunSocket } from '../features/workflow-runs/socket';
 
 export function PublishedAppPage() {
   const { slug } = useParams();
@@ -21,6 +23,22 @@ export function PublishedAppPage() {
     if (!slug) return;
     void getPublishedApp(slug).then(setApp);
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug || !run?.id) return undefined;
+    const socket = connectRunSocket(run.id, async (eventName) => {
+      setMessage(`Run update: ${eventName}`);
+      const current = await getPublishedRun(slug, run.id);
+      setRun(current);
+      if (current.artifacts[0]) {
+        const download = await getArtifactDownloadUrl(slug, current.artifacts[0].id);
+        setDownloadUrl(download.url);
+      }
+    });
+    return () => {
+      socket.close();
+    };
+  }, [run?.id, slug]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -40,6 +58,17 @@ export function PublishedAppPage() {
       const download = await getArtifactDownloadUrl(slug, current.artifacts[0].id);
       setDownloadUrl(download.url);
     }
+  }
+
+  async function exportPackage() {
+    if (!slug || !run) return;
+    setMessage('Exporting package.');
+    const artifact = await exportPublishedRun(slug, run.id);
+    const current = await getPublishedRun(slug, run.id);
+    setRun(current);
+    const download = await getArtifactDownloadUrl(slug, artifact.id);
+    setDownloadUrl(download.url);
+    setMessage('Package ready.');
   }
 
   if (!app) return <main className="public-app">Loading...</main>;
@@ -63,6 +92,9 @@ export function PublishedAppPage() {
             <p>Status: {run.status}</p>
             <button type="button" onClick={refresh}>
               Refresh
+            </button>
+            <button type="button" disabled={run.status !== 'succeeded'} onClick={exportPackage}>
+              Export package
             </button>
             {downloadUrl ? (
               <a className="download-link" href={downloadUrl}>

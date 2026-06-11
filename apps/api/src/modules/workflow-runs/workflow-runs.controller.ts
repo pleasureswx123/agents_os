@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAccessGuard } from '../auth/jwt-access.guard';
 import { WorkflowRunsService } from './workflow-runs.service';
 
@@ -20,5 +20,19 @@ export class WorkflowRunsController {
   @Post('workflow-runs/:runId/node-runs/:nodeRunId/rerun')
   rerunNode(@Param('runId') runId: string, @Param('nodeRunId') nodeRunId: string) {
     return this.service.rerunNode(runId, nodeRunId);
+  }
+
+  @Patch('workflow-runs/:runId/node-runs/:nodeRunId/edited-output')
+  updateEditedOutput(
+    @Param('runId') runId: string,
+    @Param('nodeRunId') nodeRunId: string,
+    @Body() body: { editedOutput?: unknown }
+  ) {
+    return this.service.updateEditedOutput(runId, nodeRunId, body);
+  }
+
+  @Post('workflow-runs/:runId/control')
+  control(@Param('runId') runId: string, @Body() body: { command?: string }) {
+    return this.service.control(runId, body);
   }
 }

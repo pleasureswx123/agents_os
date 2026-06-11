@@ -3,13 +3,15 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WorkflowRunsService } from '../workflow-runs/workflow-runs.service';
 import { StorageProvider } from '../object-storage/storage.provider';
+import { ArtifactsService } from '../artifact-exports/artifacts.service';
 
 @Injectable()
 export class PublishedAppsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(WorkflowRunsService) private readonly workflowRuns: WorkflowRunsService,
-    @Inject(StorageProvider) private readonly storage: StorageProvider
+    @Inject(StorageProvider) private readonly storage: StorageProvider,
+    @Inject(ArtifactsService) private readonly artifacts: ArtifactsService
   ) {}
 
   async list(projectId: string) {
@@ -135,6 +137,15 @@ export class PublishedAppsService {
       contentType: artifact.contentType,
       url: await this.storage.getDownloadUrl(artifact.objectKey)
     };
+  }
+
+  async exportPublicRun(slug: string, runId: string) {
+    const app = await this.getBySlug(slug);
+    const run = await this.prisma.workflowRun.findUnique({ where: { id: runId } });
+    if (!run || run.publishedAppId !== app.id) {
+      throw new NotFoundException({ code: 'WORKFLOW_RUN_NOT_FOUND', message: 'WorkflowRun 不存在' });
+    }
+    return this.artifacts.exportRun(runId);
   }
 
   private validateInput(schema: Record<string, unknown>, input: Record<string, unknown>) {
